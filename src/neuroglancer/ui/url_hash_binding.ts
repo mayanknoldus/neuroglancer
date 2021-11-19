@@ -93,7 +93,6 @@ export class UrlHashBinding extends RefCounted {
             const { prevUrlString } = this;
             const sameUrl = prevUrlString === urlString;
             if (!sameUrl) {
-                console.log('Updating state from user browser and saving to firebase');
                 updateUser(this.stateID, this.user.user_id, this.user.username);
                 this.stateData.url = urlData;
                 this.updateStateData(this.stateData);
@@ -194,9 +193,9 @@ export class UrlHashBinding extends RefCounted {
         this.prevUrlString = JSON.stringify(jsonStateUrl);
         this.updateStateData(this.stateData);
         updateUser(this.stateID, this.user.user_id, this.user.username);
-        this.checkAndSetStateFromFirebase()
+        this.checkAndSetStateFromFirebase();   
     }
-
+    
     /**
      * ActiveBrainAtlas fork:
      * Update the local state upon a firebase update.
@@ -220,11 +219,11 @@ export class UrlHashBinding extends RefCounted {
         updates['/neuroglancer/' + this.stateID] = stateData;
         update(ref(database), updates)
             .then(() => {
-                console.log('updatedData was OK');
+                console.log('Updating state data was OK');
             })
             .catch((error) => {
-                console.log('error in updateData');
-                console.log(error);
+                console.log('Error in updateData');
+                console.error(error);
             });
     }
 
