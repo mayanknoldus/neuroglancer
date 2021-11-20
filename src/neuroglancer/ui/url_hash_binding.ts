@@ -94,7 +94,7 @@ export class UrlHashBinding extends RefCounted {
             const sameUrl = prevUrlString === urlString;
             if (!sameUrl) {
                 updateUser(this.stateID, this.user.user_id, this.user.username);
-                this.stateData.url = urlData;
+                this.stateData.neuroglancer_state = urlData;
                 this.updateStateData(this.stateData);
                 this.prevUrlString = urlString;
             }
@@ -135,12 +135,12 @@ export class UrlHashBinding extends RefCounted {
             } else { // not in multi user mode
                 this.stateAPI.getState(stateID).then(jsonState => {
                     this.stateData = jsonState;
-                    const stateObject = this.stateData.url;
+                    const stateObject = this.stateData.neuroglancer_state;
                     this.prevUrlString = undefined;
                     this.root.reset();
                     verifyObject(stateObject);
                     this.root.restoreState(stateObject);
-                    this.stateData.url = stateObject;
+                    this.stateData.neuroglancer_state = stateObject;
                 });
             }
         } else { // this part of the else is the old code when all data was in the url
@@ -186,7 +186,7 @@ export class UrlHashBinding extends RefCounted {
     }
 
     private setStateRoot() {
-        const jsonStateUrl = this.stateData.url;
+        const jsonStateUrl = this.stateData.neuroglancer_state;
         this.root.reset();
         verifyObject(jsonStateUrl);
         this.root.restoreState(jsonStateUrl);
@@ -206,7 +206,7 @@ export class UrlHashBinding extends RefCounted {
         const stateRef = ref(database, `neuroglancer/${this.stateID}`);
         onValue(stateRef, (snapshot) => {
             this.stateData = snapshot.val();
-            const jsonStateUrl = this.stateData.url;
+            const jsonStateUrl = this.stateData.neuroglancer_state;
             this.root.reset();
             verifyObject(jsonStateUrl);
             this.root.restoreState(jsonStateUrl);
@@ -236,7 +236,7 @@ export class UrlHashBinding extends RefCounted {
         } else {
             this.stateAPI.getState(this.stateID).then(jsonState => {
                 this.stateData = jsonState;
-                const jsonStateUrl = this.stateData.url;
+                const jsonStateUrl = this.stateData.neuroglancer_state;
                 this.root.reset();
                 verifyObject(jsonStateUrl);
                 this.root.restoreState(jsonStateUrl);
