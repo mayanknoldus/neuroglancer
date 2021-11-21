@@ -125,6 +125,7 @@ export interface State {
   comments: string;
   user_date: string;
   neuroglancer_state: Record<string, unknown>;
+  // neuroglancer_state: object;
 }
 
 export class StateAPI {
