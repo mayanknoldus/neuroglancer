@@ -33,6 +33,7 @@ import {MouseEventBinder} from 'neuroglancer/util/mouse_bindings';
 import {neverSignal, Signal} from 'neuroglancer/util/signal';
 import {Uint64} from 'neuroglancer/util/uint64';
 import {CheckboxIcon} from 'neuroglancer/widget/checkbox_icon';
+import {makeIcon} from 'neuroglancer/widget/icon';
 import {makeCopyButton} from 'neuroglancer/widget/copy_button';
 import {DependentViewWidget} from 'neuroglancer/widget/dependent_view_widget';
 import {Tab} from 'neuroglancer/widget/tab_view';
@@ -41,6 +42,10 @@ import {clampToInterval, computeInvlerp, dataTypeCompare, DataTypeInterval, data
 import {CdfController, getUpdatedRangeAndWindowParameters, RangeAndWindowIntervals} from 'neuroglancer/widget/invlerp';
 import {makeToolButton} from 'neuroglancer/ui/tool';
 import {ANNOTATE_MERGE_SEGMENTS_TOOL_ID, ANNOTATE_SPLIT_SEGMENTS_TOOL_ID} from 'neuroglancer/ui/segment_split_merge_tools';
+import {StatusMessage} from 'neuroglancer/status';
+import {fetchOk} from 'neuroglancer/util/http_request';
+
+import {AppSettings} from 'neuroglancer/services/service';
 
 const tempUint64 = new Uint64();
 
@@ -773,11 +778,56 @@ function renderTagSummary(
   return tagList;
 }
 
+interface NeuronJSON {
+  idstring: Array<string>
+};
+
 export class SegmentDisplayTab extends Tab {
+  private fetchButton: HTMLElement;
+  
   constructor(public layer: SegmentationUserLayer) {
     super();
+    const buttonText = 'Submit';
+    const buttonTitle = 'Submit mouselight query';
+
     const {element} = this;
     element.classList.add('neuroglancer-segment-display-tab');
+    // Mouselight query section
+    const mouselightElement = document.createElement('div');
+    mouselightElement.classList.add('neuroglancer-mouselight-query-tool');
+    // query type
+    // const mouselightQueryType = document.createElement('select');
+    // mouselightQueryType.classList.add('neuroglancer-mouselight-query-type');
+    // const defaultOption = document.createElement('option');
+    // defaultOption.text = 'Anatomical Region';
+    // defaultOption.value = 'Anatomical Region';
+    // defaultOption.selected = true;
+    // const option = document.createElement('option');
+    // option.value = 'Neuron ID';
+    // option.text = 'Neuron ID';
+    // mouselightQueryType.add(defaultOption); 
+    // mouselightQueryType.add(option);
+    // mouselightElement.appendChild(mouselightQueryType);
+    // // source or target location -- make this an input which will autocomplete like the segment query tool
+    // // structure -- make this a dropdown of "axonal end point" , "axonal branch point", "soma", etc..
+    // // threshold -- make this two inputs: first operator is a dropdown of >, <, >=, <=, =, !=
+    // // then the numeric input
+    // // SUBMIT QUERY BUTTON
+    this.fetchButton = makeIcon({
+      text: buttonText,
+      title: buttonTitle,
+      onClick: () => {this.fetchNeurons()},
+    });
+    this.fetchButton.classList.add('neuroglancer-fetch-annotation-button');
+    mouselightElement.appendChild(this.fetchButton);
+    element.appendChild(mouselightElement);
+  
+    
+    //   const newElement = document.createElement('div');
+    //   newElement.classList.add('neuroglancer-fetch-annotation-tool');
+    //   newElement.appendChild(annotationSelectionFetched);
+    //   newElement.appendChild(this.fetchButton);
+
     element.appendChild(
         this.registerDisposer(new DependentViewWidget(
                                   layer.displayState.segmentationGroupState.value.graph,
@@ -1074,4 +1124,34 @@ export class SegmentDisplayTab extends Tab {
                 }))
             .element);
   }
+  async fetchNeurons() {
+
+      StatusMessage.showTemporaryMessage('Fetching mouselight neurons...');
+      const neuronURL = `${AppSettings.API_ENDPOINT}/mlneurons/625/10`;
+      console.log(neuronURL);
+      try {
+        const neuronJSON:NeuronJSON = await fetchOk(neuronURL, {
+          method: 'GET',
+        }).then(response => {
+          return response.json();
+        });
+        console.log(neuronJSON);
+        const group = this.layer.displayState.segmentationGroupState.value;
+        let counter = 0;
+        neuronJSON.idstring.forEach((idstring: string) => {
+          console.log(idstring);
+          let id = Uint64.parseString(String(counter), 10);
+          group.visibleSegments.add(id);
+          counter += 1;
+          // const option = document.createElement('option');
+          // option.value = `${prep_id}/${encodeURIComponent(layer)}/${input_type_id}`;
+          // option.text = `${prep_id}/${layer}/${input_type}`;
+          // annotationSelectionFetched.add(option);
+        });
+        
+        } catch (e) {
+          StatusMessage.showTemporaryMessage('Unable to fetch the mouselight neurons');
+          throw e;
+        }
+    }
 }
