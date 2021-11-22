@@ -779,7 +779,7 @@ function renderTagSummary(
 }
 
 interface NeuronJSON {
-  idstring: Array<string>
+  segmentId: Array<Number>
 };
 
 export class SegmentDisplayTab extends Tab {
@@ -1127,7 +1127,7 @@ export class SegmentDisplayTab extends Tab {
   async fetchNeurons() {
 
       StatusMessage.showTemporaryMessage('Fetching mouselight neurons...');
-      const neuronURL = `${AppSettings.API_ENDPOINT}/mlneurons/625/10`;
+      const neuronURL = `${AppSettings.API_ENDPOINT}/mlneurons/625/20`;
       console.log(neuronURL);
       try {
         const neuronJSON:NeuronJSON = await fetchOk(neuronURL, {
@@ -1137,17 +1137,21 @@ export class SegmentDisplayTab extends Tab {
         });
         console.log(neuronJSON);
         const group = this.layer.displayState.segmentationGroupState.value;
-        let counter = 0;
-        neuronJSON.idstring.forEach((idstring: string) => {
-          console.log(idstring);
-          let id = Uint64.parseString(String(counter), 10);
+        // let counter = 0;
+        neuronJSON.segmentId.forEach((segid:number) => {
+          // console.log(id);
+          let id = new Uint64(segid);
+          console.log(id);
+          // console.log(id);
+          // counter +=1;
+
           group.visibleSegments.add(id);
-          counter += 1;
           // const option = document.createElement('option');
           // option.value = `${prep_id}/${encodeURIComponent(layer)}/${input_type_id}`;
           // option.text = `${prep_id}/${layer}/${input_type}`;
           // annotationSelectionFetched.add(option);
         });
+        StatusMessage.showTemporaryMessage('Successfully fetched mouselight neurons');
         
         } catch (e) {
           StatusMessage.showTemporaryMessage('Unable to fetch the mouselight neurons');
