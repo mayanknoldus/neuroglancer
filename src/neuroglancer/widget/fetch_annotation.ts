@@ -26,7 +26,7 @@ interface AnnotationLayerInfo {
 
 export class FetchAnnotationWidget extends RefCounted{
   element: HTMLElement;
-  private annotationSelection: HTMLSelectElement;
+  public annotationSelection: HTMLSelectElement;
   private annotationSelectionDefault: HTMLSelectElement;
   private fetchButton: HTMLElement;
 
@@ -43,8 +43,9 @@ export class FetchAnnotationWidget extends RefCounted{
     defaultOption.selected = true;
     this.annotationSelectionDefault.add(defaultOption);
     this.annotationSelection = this.annotationSelectionDefault;
-
+    console.log("Right before setting up anntation list")
     this.setUpAnnotationList();
+    console.log("After setting up anntation list")
 
     this.fetchButton = makeIcon({
       text: buttonText,
@@ -92,6 +93,7 @@ export class FetchAnnotationWidget extends RefCounted{
       newElement.appendChild(this.fetchButton);
       this.element.parentNode?.replaceChild(newElement, this.element);
       this.annotationSelection = annotationSelectionFetched;
+      console.log("At end of async call")
     } catch (err) {
       StatusMessage.showTemporaryMessage('Failed to load the list of annotations, please refresh.');
     }

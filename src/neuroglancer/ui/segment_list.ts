@@ -44,6 +44,7 @@ import {makeToolButton} from 'neuroglancer/ui/tool';
 import {ANNOTATE_MERGE_SEGMENTS_TOOL_ID, ANNOTATE_SPLIT_SEGMENTS_TOOL_ID} from 'neuroglancer/ui/segment_split_merge_tools';
 import {StatusMessage} from 'neuroglancer/status';
 import {fetchOk} from 'neuroglancer/util/http_request';
+import {removeFromParent} from 'neuroglancer/util/dom';
 
 import {AppSettings} from 'neuroglancer/services/service';
 
@@ -782,9 +783,16 @@ interface NeuronJSON {
   segmentId: Array<Number>
 };
 
+interface AnatomicalJSON {
+  segment_names: Array<string>
+};
+
 export class SegmentDisplayTab extends Tab {
+  oldmouselightElement: HTMLElement;
   private fetchButton: HTMLElement;
-  
+  private anatomicalSelection: HTMLSelectElement;
+  private anatomicalSelectionDefault: HTMLSelectElement;
+
   constructor(public layer: SegmentationUserLayer) {
     super();
     const buttonText = 'Submit';
@@ -793,11 +801,20 @@ export class SegmentDisplayTab extends Tab {
     const {element} = this;
     element.classList.add('neuroglancer-segment-display-tab');
     // Mouselight query section
-    const mouselightElement = document.createElement('div');
-    mouselightElement.classList.add('neuroglancer-mouselight-query-tool');
+    this.anatomicalSelectionDefault = document.createElement('select');
+    this.anatomicalSelectionDefault.classList.add('neuroglancer-fetch-annotation-selection');
+    const defaultOption = document.createElement('option');
+    defaultOption.text = 'Loading anatomical regions';
+    defaultOption.value = '';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    this.anatomicalSelectionDefault.add(defaultOption);
+    this.anatomicalSelection = this.anatomicalSelectionDefault;
+
+    // this.setUpAnnotationList();
+    this.setUpAnatomicalRegionsList()
     // query type
-    // const mouselightQueryType = document.createElement('select');
-    // mouselightQueryType.classList.add('neuroglancer-mouselight-query-type');
+    
     // const defaultOption = document.createElement('option');
     // defaultOption.text = 'Anatomical Region';
     // defaultOption.value = 'Anatomical Region';
@@ -818,10 +835,16 @@ export class SegmentDisplayTab extends Tab {
       title: buttonTitle,
       onClick: () => {this.fetchNeurons()},
     });
+    
     this.fetchButton.classList.add('neuroglancer-fetch-annotation-button');
-    mouselightElement.appendChild(this.fetchButton);
-    element.appendChild(mouselightElement);
+
+    this.oldmouselightElement = document.createElement('div');
+    this.oldmouselightElement.classList.add('neuroglancer-fetch-annotation-tool');
+    this.oldmouselightElement.appendChild(this.anatomicalSelection);
+    this.oldmouselightElement.appendChild(this.fetchButton);
+    this.registerDisposer(() => removeFromParent(this.oldmouselightElement));
   
+    element.appendChild(this.oldmouselightElement)
     
     //   const newElement = document.createElement('div');
     //   newElement.classList.add('neuroglancer-fetch-annotation-tool');
@@ -859,7 +882,7 @@ export class SegmentDisplayTab extends Tab {
     const debouncedUpdateQueryModel = this.registerCancellable(debounce(() => {
       segmentQuery.value = queryElement.value;
     }, 200));
-    queryElement.autocomplete = 'off';
+    queryElement.autocomplete = 'on';
     queryElement.title = keyMap.describe();
     queryElement.spellcheck = false;
     queryElement.placeholder = 'Enter ID, name prefix or /regexp';
@@ -1156,6 +1179,46 @@ export class SegmentDisplayTab extends Tab {
         } catch (e) {
           StatusMessage.showTemporaryMessage('Unable to fetch the mouselight neurons');
           throw e;
+        }
+    }
+
+    async setUpAnatomicalRegionsList() {
+
+      const anatomicalURL = `${AppSettings.API_ENDPOINT}/anatomical_regions/`;
+      try {
+        const anatomicalJSON:AnatomicalJSON = await fetchOk(anatomicalURL, {
+          method: 'GET',
+        }).then(response => {
+          return response.json();
+        });
+
+      const mouselightAnatomicalRegions = document.createElement('select');
+      mouselightAnatomicalRegions.classList.add('neuroglancer-fetch-annotation-selection');
+      const defaultOption = document.createElement('option');
+        defaultOption.text = 'Select anatomical region';
+        defaultOption.value = '';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        mouselightAnatomicalRegions.add(defaultOption);
+      
+      const segment_names = anatomicalJSON.segment_names;
+      segment_names.forEach((segment_name:string) => {
+        const option = document.createElement('option');
+        option.value = segment_name;
+        option.text = segment_name;
+        mouselightAnatomicalRegions.add(option);
+      });
+
+      const mouselightElementFetched = document.createElement('div');
+      mouselightElementFetched.classList.add('neuroglancer-mouselight-neuron-tool');
+      mouselightElementFetched.appendChild(mouselightAnatomicalRegions);
+      mouselightElementFetched.appendChild(this.fetchButton);
+      this.oldmouselightElement.parentNode?.replaceChild(mouselightElementFetched, this.oldmouselightElement);
+      this.anatomicalSelection = mouselightAnatomicalRegions;
+
+        
+        } catch (e) {
+          StatusMessage.showTemporaryMessage('Failed to load list of anatomical regions');
         }
     }
 }
