@@ -193,9 +193,9 @@ export class UrlHashBinding extends RefCounted {
         this.prevUrlString = JSON.stringify(jsonStateUrl);
         this.updateStateData(this.stateData);
         updateUser(this.stateID, this.user.user_id, this.user.username);
-        this.checkAndSetStateFromFirebase();   
+        this.checkAndSetStateFromFirebase();
     }
-    
+
     /**
      * ActiveBrainAtlas fork:
      * Update the local state upon a firebase update.
@@ -222,7 +222,6 @@ export class UrlHashBinding extends RefCounted {
                 console.log('Updating state data was OK');
             })
             .catch((error) => {
-                console.log('Error in updateData');
                 console.error(error);
             });
     }
