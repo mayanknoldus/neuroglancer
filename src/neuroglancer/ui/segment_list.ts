@@ -33,7 +33,6 @@ import {MouseEventBinder} from 'neuroglancer/util/mouse_bindings';
 import {neverSignal, Signal} from 'neuroglancer/util/signal';
 import {Uint64} from 'neuroglancer/util/uint64';
 import {CheckboxIcon} from 'neuroglancer/widget/checkbox_icon';
-import {makeIcon} from 'neuroglancer/widget/icon';
 import {makeCopyButton} from 'neuroglancer/widget/copy_button';
 import {DependentViewWidget} from 'neuroglancer/widget/dependent_view_widget';
 import {Tab} from 'neuroglancer/widget/tab_view';
@@ -42,11 +41,7 @@ import {clampToInterval, computeInvlerp, dataTypeCompare, DataTypeInterval, data
 import {CdfController, getUpdatedRangeAndWindowParameters, RangeAndWindowIntervals} from 'neuroglancer/widget/invlerp';
 import {makeToolButton} from 'neuroglancer/ui/tool';
 import {ANNOTATE_MERGE_SEGMENTS_TOOL_ID, ANNOTATE_SPLIT_SEGMENTS_TOOL_ID} from 'neuroglancer/ui/segment_split_merge_tools';
-import {StatusMessage} from 'neuroglancer/status';
-import {fetchOk} from 'neuroglancer/util/http_request';
-import {removeFromParent} from 'neuroglancer/util/dom';
-// import {verifyPositiveInt} from 'neuroglancer/util/json'
-import {AppSettings} from 'neuroglancer/services/service';
+import {FetchMouselightNeuronsWidget} from 'neuroglancer/widget/fetch_mouselight_neurons'
 
 const tempUint64 = new Uint64();
 
@@ -779,90 +774,16 @@ function renderTagSummary(
   return tagList;
 }
 
-interface NeuronJSON {
-  segmentId: Array<Number>
-};
-
-interface AnatomicalJSON {
-  segment_names: Array<string>
-};
-
 export class SegmentDisplayTab extends Tab {
-  oldmouselightElement: HTMLElement;
-  private fetchButton: HTMLElement;
-  private anatomicalSelection: HTMLSelectElement;
-  private anatomicalSelectionDefault: HTMLSelectElement;
-  private filterType: HTMLSelectElement;
-  private operatorType: HTMLSelectElement;
-  private filterThreshold: HTMLInputElement;
 
 
   constructor(public layer: SegmentationUserLayer) {
     super();
-    const buttonText = 'Submit';
-    const buttonTitle = 'Submit mouselight query';
 
     const {element} = this;
     element.classList.add('neuroglancer-segment-display-tab');
-    // Mouselight query section
-    this.anatomicalSelectionDefault = document.createElement('select');
-    this.anatomicalSelectionDefault.classList.add('neuroglancer-fetch-annotation-selection');
-    const defaultOption = document.createElement('option');
-    defaultOption.text = 'Loading anatomical regions';
-    defaultOption.value = '';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    this.anatomicalSelectionDefault.add(defaultOption);
-    this.anatomicalSelection = this.anatomicalSelectionDefault;
-
-    // this.setUpAnnotationList();
-    this.setUpAnatomicalRegionsList()
-    // query type
-
-    // filter type -- e.g. "axonal end point" ,
-    // "axonal branch point", "soma", etc..
-    this.filterType = document.createElement('select');
-    this.filterType.classList.add('neuroglancer-fetch-annotation-selection');
-    let filterTypeOptions = ["soma","axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches"];
-    filterTypeOptions.forEach((option:string) => {
-        const filter_option = document.createElement('option');
-        filter_option.value = option;
-        filter_option.text = option;
-        this.filterType.add(filter_option);
-      });
-    // Operator type -- is a dropdown of >, <, >=, <=, =, 
-    this.operatorType = document.createElement('select');
-    this.operatorType.classList.add('neuroglancer-fetch-annotation-selection');
-    let operatorTypeOptions = [">",">=","<","<=","="];
-    let operatorTypeOptionValues = ["gt","gte","lt","lte","exact"];
-    for(var i = 0; i < operatorTypeOptions.length; i++) {
-        const filter_option = document.createElement('option');
-        filter_option.text = operatorTypeOptions[i];
-        filter_option.value = operatorTypeOptionValues[i];
-        this.operatorType.add(filter_option);
-    };
-    // Filter Threshold -- numeric input
-    this.filterThreshold = document.createElement('input');
-    this.filterThreshold.classList.add('neuroglancer-fetch-annotation-selection');
-    // SUBMIT QUERY BUTTON
-    this.fetchButton = makeIcon({
-      text: buttonText,
-      title: buttonTitle,
-      onClick: () => {this.fetchNeurons()},
-    });
-    
-    this.fetchButton.classList.add('neuroglancer-fetch-annotation-button');
-
-    this.oldmouselightElement = document.createElement('div');
-    this.oldmouselightElement.classList.add('neuroglancer-fetch-annotation-tool');
-    this.oldmouselightElement.appendChild(this.anatomicalSelection);
-    this.oldmouselightElement.appendChild(this.filterType);
-    this.oldmouselightElement.appendChild(this.operatorType);
-    this.oldmouselightElement.appendChild(this.filterThreshold);
-    this.oldmouselightElement.appendChild(this.fetchButton);
-    this.registerDisposer(() => removeFromParent(this.oldmouselightElement));
-  
-    element.appendChild(this.oldmouselightElement)
+    const fetchMouselightNeuronsWidget = this.registerDisposer(new FetchMouselightNeuronsWidget(this.layer));
+    this.element.appendChild(fetchMouselightNeuronsWidget.element);
     
     //   const newElement = document.createElement('div');
     //   newElement.classList.add('neuroglancer-fetch-annotation-tool');
@@ -1165,95 +1086,7 @@ export class SegmentDisplayTab extends Tab {
                 }))
             .element);
   }
-  async setUpAnatomicalRegionsList() {
-
-      const anatomicalURL = `${AppSettings.API_ENDPOINT}/anatomical_regions/`;
-      try {
-        const anatomicalJSON:AnatomicalJSON = await fetchOk(anatomicalURL, {
-          method: 'GET',
-        }).then(response => {
-          return response.json();
-        });
-
-      const mouselightAnatomicalRegions = document.createElement('select');
-      mouselightAnatomicalRegions.classList.add('neuroglancer-fetch-annotation-selection');
-      const defaultOption = document.createElement('option');
-        defaultOption.text = 'Select anatomical region';
-        defaultOption.value = '';
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        mouselightAnatomicalRegions.add(defaultOption);
-      
-      const segment_names = anatomicalJSON.segment_names;
-      segment_names.forEach((segment_name:string) => {
-        const option = document.createElement('option');
-        option.value = segment_name;
-        option.text = segment_name;
-        mouselightAnatomicalRegions.add(option);
-      });
-
-      const mouselightElementFetched = document.createElement('div');
-      mouselightElementFetched.classList.add('neuroglancer-mouselight-neuron-tool');
-      mouselightElementFetched.appendChild(mouselightAnatomicalRegions);
-      mouselightElementFetched.appendChild(this.filterType);
-      mouselightElementFetched.appendChild(this.operatorType);
-      mouselightElementFetched.appendChild(this.filterThreshold);
-      mouselightElementFetched.appendChild(this.fetchButton);
-      this.oldmouselightElement.parentNode?.replaceChild(mouselightElementFetched, this.oldmouselightElement);
-      this.anatomicalSelection = mouselightAnatomicalRegions;
-
-        
-      } catch (e) {
-        StatusMessage.showTemporaryMessage('Failed to load list of anatomical regions');
-      }
-  }
-
-  async fetchNeurons() {
-      const filterType = this.filterType.value;
-      const operatorType = this.operatorType.value;
-      const anatomicalSelection = this.anatomicalSelection.value;
-      if (!anatomicalSelection) {
-        StatusMessage.showTemporaryMessage('Please select an anatomical region');
-        return;
-      }
-      const filterThreshold = this.filterThreshold.value;
-      if (!filterThreshold) {
-        StatusMessage.showTemporaryMessage('Please select a threshold');
-        return;
-      }
-      StatusMessage.showTemporaryMessage('Fetching mouselight neurons...');
-      const neuronURL = `${AppSettings.API_ENDPOINT}/mlneurons/${anatomicalSelection}/${filterType}/${operatorType}/${filterThreshold}`;
-      console.log(neuronURL);
-      try {
-        const neuronJSON:NeuronJSON = await fetchOk(neuronURL, {
-          method: 'GET',
-        }).then(response => {
-          return response.json();
-        });
-        console.log(neuronJSON);
-        const group = this.layer.displayState.segmentationGroupState.value;
-        // let counter = 0;
-        let n_neurons_fetched = neuronJSON.segmentId.length/3;
-        neuronJSON.segmentId.forEach((segid:number) => {
-          // console.log(id);
-          let id = new Uint64(segid);
-          console.log(id);
-          // console.log(id);
-          // counter +=1;
-
-          group.visibleSegments.add(id);
-          // const option = document.createElement('option');
-          // option.value = `${prep_id}/${encodeURIComponent(layer)}/${input_type_id}`;
-          // option.text = `${prep_id}/${layer}/${input_type}`;
-          // annotationSelectionFetched.add(option);
-        });
-        StatusMessage.showTemporaryMessage(`Successfully fetched ${n_neurons_fetched}  mouselight neurons`,3000);
-        
-        } catch (e) {
-          StatusMessage.showTemporaryMessage('Unable to fetch the mouselight neurons');
-          throw e;
-        }
-    }
+  
 
     
 }
