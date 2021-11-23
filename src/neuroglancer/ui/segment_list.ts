@@ -823,18 +823,18 @@ export class SegmentDisplayTab extends Tab {
     // "axonal branch point", "soma", etc..
     this.filterType = document.createElement('select');
     this.filterType.classList.add('neuroglancer-fetch-annotation-selection');
-    let filterTypeOptions = ["soma","axonal_endpoint","dendritic_endpoint"];
+    let filterTypeOptions = ["soma","axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches"];
     filterTypeOptions.forEach((option:string) => {
         const filter_option = document.createElement('option');
         filter_option.value = option;
         filter_option.text = option;
         this.filterType.add(filter_option);
       });
-    // Operator type -- is a dropdown of >, <, >=, <=, =, !=
+    // Operator type -- is a dropdown of >, <, >=, <=, =, 
     this.operatorType = document.createElement('select');
     this.operatorType.classList.add('neuroglancer-fetch-annotation-selection');
-    let operatorTypeOptions = ["<=",">=","="];
-    let operatorTypeOptionValues = ["le","ge","eq"];
+    let operatorTypeOptions = [">",">=","<","<=","="];
+    let operatorTypeOptionValues = ["gt","gte","lt","lte","exact"];
     for(var i = 0; i < operatorTypeOptions.length; i++) {
         const filter_option = document.createElement('option');
         filter_option.text = operatorTypeOptions[i];
