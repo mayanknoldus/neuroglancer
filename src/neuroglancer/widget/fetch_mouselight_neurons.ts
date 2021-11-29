@@ -26,6 +26,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
   private filterThreshold: HTMLInputElement;
   private fetchButton: HTMLElement;
 
+
   constructor(public layer: SegmentationUserLayer, public layerName: string) {
     super();
     const buttonText = 'Click to fetch';
@@ -36,19 +37,6 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     this.fetchTitle = document.createElement('h3');
     this.fetchTitle.innerText = "Neuron fetch tool"
     this.fetchTitle.align = "Center"
-
-    // Anatomical region
-    this.anatomicalSelectionDefault = document.createElement('select');
-    this.anatomicalSelectionDefault.classList.add('neuroglancer-fetch-mouselight-selection');
-    const defaultOption = document.createElement('option');
-    defaultOption.text = 'Loading anatomical regions';
-    defaultOption.value = '';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    this.anatomicalSelectionDefault.add(defaultOption);
-    this.anatomicalSelection = this.anatomicalSelectionDefault;
-    this.setUpAnatomicalRegionsList(atlasName);
-    // query type
 
     // filter type -- e.g. "axonal end point" ,
     // "axonal branch point", "soma", etc..
@@ -61,6 +49,11 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     defaultOptionFilterType.selected = true;
     this.filterType.add(defaultOptionFilterType);
 
+    // Add listener to check if soma is selected. If so, hide the operator type and threshold
+
+    this.filterType.addEventListener(
+      'change', () => this.mychangehandler(this.filterType));
+
     const filterTypeOptions = ["axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches","soma"];
     filterTypeOptions.forEach((option:string) => {
         const filter_option = document.createElement('option');
@@ -68,6 +61,19 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
         filter_option.text = option;
         this.filterType.add(filter_option);
       });
+
+    // Anatomical region
+    this.anatomicalSelectionDefault = document.createElement('select');
+    this.anatomicalSelectionDefault.classList.add('neuroglancer-fetch-mouselight-selection');
+    const defaultOption = document.createElement('option');
+    defaultOption.text = 'Loading anatomical regions';
+    defaultOption.value = '';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    this.anatomicalSelectionDefault.add(defaultOption);
+    this.anatomicalSelection = this.anatomicalSelectionDefault;
+    this.setUpAnatomicalRegionsList(atlasName);
+    
     // Operator type -- is a dropdown of >, <, >=, <=, =, 
     this.operatorType = document.createElement('select');
     this.operatorType.classList.add('neuroglancer-fetch-mouselight-selection');
@@ -104,6 +110,16 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     this.element.appendChild(this.fetchButton);
     this.registerDisposer(() => removeFromParent(this.element));
 
+  }
+  private mychangehandler(elem: HTMLSelectElement) {
+    if (elem.value == 'soma') {
+      this.operatorType.style.display = "none";
+      this.filterThreshold.style.display = "none";
+    }
+    else {
+      this.operatorType.style.display = "block";
+      this.filterThreshold.style.display = "block";
+    }
   }
 
   async setUpAnatomicalRegionsList(atlasName: string) {
@@ -159,30 +175,32 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
         StatusMessage.showTemporaryMessage('Please select an anatomical region');
         return;
       }
-      const filterThreshold = this.filterThreshold.value;
-      if (!filterThreshold) {
-        StatusMessage.showTemporaryMessage('Please select a threshold');
-        return;
+      let neuronURL = `${AppSettings.API_ENDPOINT}/mlneurons/${atlasName}/${anatomicalSelection}`
+      if (filterType == 'soma') {
+        neuronURL += '/soma';
+      }
+
+      else {
+        const filterThreshold = this.filterThreshold.value;
+        if (!filterThreshold) {
+          StatusMessage.showTemporaryMessage('Please select a threshold');
+          return;
+        }
+        neuronURL += `/${filterType}/${operatorType}/${filterThreshold}`;
       }
       StatusMessage.showTemporaryMessage('Fetching mouselight neurons...');
-      const neuronURL = `${AppSettings.API_ENDPOINT}/mlneurons/${atlasName}/${anatomicalSelection}/${filterType}/${operatorType}/${filterThreshold}`;
-      console.log(neuronURL);
+      
       try {
         const neuronJSON:NeuronJSON = await fetchOk(neuronURL, {
           method: 'GET',
         }).then(response => {
           return response.json();
         });
-        console.log(neuronJSON);
         const group = this.layer.displayState.segmentationGroupState.value;
         // let counter = 0;
         const n_neurons_fetched = neuronJSON.segmentId.length/3;
         neuronJSON.segmentId.forEach((segid:number) => {
-          // console.log(id);
           const id = new Uint64(segid);
-          console.log(id);
-          // console.log(id);
-          // counter +=1;
 
           group.visibleSegments.add(id);
           // const option = document.createElement('option');

@@ -25,12 +25,6 @@
 
 }
 
-option.default
-{
-    background-color: #000000;
-    color: #ffffff;
-}
-
 .neuroglancer-fetch-mouselight-threshold {
   min-width: 0;
   width: 70%;
