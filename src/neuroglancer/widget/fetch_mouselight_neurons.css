@@ -1,12 +1,58 @@
-.neuroglancer-fetch-annotation-tool {
-  display: flex;
+.neuroglancer-fetch-mouselight-tool {
+  /*display: flex;*/
+  border:  1px solid yellow;
+  border-style: solid;
+  width: 100%;
 }
 
-.neuroglancer-fetch-annotation-selection {
+.neuroglancer-fetch-mouselight-title {
   min-width: 0;
+  width: 50%;
+  display: inline-block;
+  margin-bottom: 5px;
+  margin: auto;
+  padding: 3px;
 }
 
-.neuroglancer-fetch-annotation-button {
-  margin-left: 4px;
-  margin-right: 4px;
+.neuroglancer-fetch-mouselight-selection {
+  width: 70%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 5px;
+  text-align: center;
+  padding: 3px;
+
+}
+
+option.default
+{
+    background-color: #000000;
+    color: #ffffff;
+}
+
+.neuroglancer-fetch-mouselight-threshold {
+  min-width: 0;
+  width: 70%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.neuroglancer-fetch-mouselight-button {
+  background-color: #4CAF50; /* Green */
+  width: 80px;
+  margin-bottom: 5px;
+  text-align: center;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+input, select {
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
 }

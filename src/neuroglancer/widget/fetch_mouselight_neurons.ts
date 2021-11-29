@@ -19,6 +19,7 @@ interface AnatomicalJSON {
 export class FetchMouselightNeuronsWidget extends RefCounted{
   element: HTMLElement;
   private fetchButton: HTMLElement;
+  private fetchTitle: HTMLHeadingElement;
   private anatomicalSelection: HTMLSelectElement;
   private anatomicalSelectionDefault: HTMLSelectElement;
   private filterType: HTMLSelectElement;
@@ -27,12 +28,18 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
 
   constructor(public layer: SegmentationUserLayer) {
     super();
-    const buttonText = 'Submit';
-    const buttonTitle = 'Submit mouselight query';
+    const buttonText = 'Click to fetch';
+    const buttonTitle = 'Fetch mouselight neurons';
 
     // Mouselight query section
+    // Title
+    this.fetchTitle = document.createElement('h3');
+    this.fetchTitle.innerText = "Neuron fetch tool"
+    this.fetchTitle.align = "Center"
+
+    // Anatomical region
     this.anatomicalSelectionDefault = document.createElement('select');
-    this.anatomicalSelectionDefault.classList.add('neuroglancer-fetch-annotation-selection');
+    this.anatomicalSelectionDefault.classList.add('neuroglancer-fetch-mouselight-selection');
     const defaultOption = document.createElement('option');
     defaultOption.text = 'Loading anatomical regions';
     defaultOption.value = '';
@@ -40,16 +47,21 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     defaultOption.selected = true;
     this.anatomicalSelectionDefault.add(defaultOption);
     this.anatomicalSelection = this.anatomicalSelectionDefault;
-
-    // this.setUpAnnotationList();
     this.setUpAnatomicalRegionsList()
     // query type
 
     // filter type -- e.g. "axonal end point" ,
     // "axonal branch point", "soma", etc..
     this.filterType = document.createElement('select');
-    this.filterType.classList.add('neuroglancer-fetch-annotation-selection');
-    let filterTypeOptions = ["soma","axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches"];
+    this.filterType.classList.add('neuroglancer-fetch-mouselight-selection');
+    const defaultOptionFilterType = document.createElement('option');
+    defaultOptionFilterType.text = 'Select neuron part';
+    defaultOptionFilterType.value = '';
+    defaultOptionFilterType.disabled = true;
+    defaultOptionFilterType.selected = true;
+    this.filterType.add(defaultOptionFilterType);
+
+    let filterTypeOptions = ["axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches","soma"];
     filterTypeOptions.forEach((option:string) => {
         const filter_option = document.createElement('option');
         filter_option.value = option;
@@ -58,7 +70,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
       });
     // Operator type -- is a dropdown of >, <, >=, <=, =, 
     this.operatorType = document.createElement('select');
-    this.operatorType.classList.add('neuroglancer-fetch-annotation-selection');
+    this.operatorType.classList.add('neuroglancer-fetch-mouselight-selection');
     let operatorTypeOptions = [">",">=","<","<=","="];
     let operatorTypeOptionValues = ["gt","gte","lt","lte","exact"];
     for(var i = 0; i < operatorTypeOptions.length; i++) {
@@ -69,7 +81,9 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     };
     // Filter Threshold -- numeric input
     this.filterThreshold = document.createElement('input');
-    this.filterThreshold.classList.add('neuroglancer-fetch-annotation-selection');
+    this.filterThreshold.type = 'text'
+    this.filterThreshold.placeholder = 'Threshold (integer)'
+    this.filterThreshold.classList.add('neuroglancer-fetch-mouselight-threshold');
     // SUBMIT QUERY BUTTON
     this.fetchButton = makeIcon({
       text: buttonText,
@@ -77,12 +91,13 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
       onClick: () => {this.fetchNeurons()},
     });
     
-    this.fetchButton.classList.add('neuroglancer-fetch-annotation-button');
+    this.fetchButton.classList.add('neuroglancer-fetch-mouselight-button');
 
     this.element = document.createElement('div');
-    this.element.classList.add('neuroglancer-fetch-annotation-tool');
-    this.element.appendChild(this.anatomicalSelection);
+    this.element.classList.add('neuroglancer-fetch-mouselight-tool');
+    this.element.appendChild(this.fetchTitle);
     this.element.appendChild(this.filterType);
+    this.element.appendChild(this.anatomicalSelection);
     this.element.appendChild(this.operatorType);
     this.element.appendChild(this.filterThreshold);
     this.element.appendChild(this.fetchButton);
@@ -101,12 +116,13 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
         });
 
       const mouselightAnatomicalRegions = document.createElement('select');
-      mouselightAnatomicalRegions.classList.add('neuroglancer-fetch-annotation-selection');
+      mouselightAnatomicalRegions.classList.add('neuroglancer-fetch-mouselight-selection');
       const defaultOption = document.createElement('option');
         defaultOption.text = 'Select anatomical region';
         defaultOption.value = '';
         defaultOption.disabled = true;
         defaultOption.selected = true;
+        defaultOption.classList.add('default')
         mouselightAnatomicalRegions.add(defaultOption);
       
       const segment_names = anatomicalJSON.segment_names;
@@ -118,9 +134,10 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
       });
 
       const mouselightElementFetched = document.createElement('div');
-      mouselightElementFetched.classList.add('neuroglancer-mouselight-neuron-tool');
-      mouselightElementFetched.appendChild(mouselightAnatomicalRegions);
+      mouselightElementFetched.classList.add('neuroglancer-fetch-mouselight-tool');
+      mouselightElementFetched.appendChild(this.fetchTitle);
       mouselightElementFetched.appendChild(this.filterType);
+      mouselightElementFetched.appendChild(mouselightAnatomicalRegions);
       mouselightElementFetched.appendChild(this.operatorType);
       mouselightElementFetched.appendChild(this.filterThreshold);
       mouselightElementFetched.appendChild(this.fetchButton);
