@@ -789,6 +789,7 @@ export class SegmentDisplayTab extends Tab {
         new FetchMouselightNeuronsWidget(this.layer,layerName));
       
       this.element.appendChild(fetchMouselightNeuronsWidget.element);
+      // this.element.appendChild(fetchMouselightNeuronsWidget.elementSecond);
     }
     //   const newElement = document.createElement('div');
     //   newElement.classList.add('neuroglancer-fetch-annotation-tool');

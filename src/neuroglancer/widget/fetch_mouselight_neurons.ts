@@ -17,27 +17,51 @@ interface AnatomicalJSON {
 }
 
 export class FetchMouselightNeuronsWidget extends RefCounted{
-  element: HTMLElement;
+  public element: HTMLElement;
+  private filterField: HTMLElement;
+  private filterFieldSecond: HTMLElement;
   private fetchTitle: HTMLHeadingElement;
   private anatomicalSelection: HTMLSelectElement;
   private anatomicalSelectionDefault: HTMLSelectElement;
   private filterType: HTMLSelectElement;
   private operatorType: HTMLSelectElement;
   private filterThreshold: HTMLInputElement;
-  private fetchButton: HTMLElement;
 
+  private anatomicalSelectionSecond: HTMLSelectElement;
+  private anatomicalSelectionDefaultSecond: HTMLSelectElement;
+  private filterTypeSecond: HTMLSelectElement;
+  private operatorTypeSecond: HTMLSelectElement;
+  private filterThresholdSecond: HTMLInputElement;
+
+  private fetchButton: HTMLElement;
 
   constructor(public layer: SegmentationUserLayer, public layerName: string) {
     super();
     const buttonText = 'Click to fetch';
     const buttonTitle = 'Fetch mouselight neurons';
+    const operatorTypeOptions = [">",">=","<","<=","="];
+    const operatorTypeOptionValues = ["gt","gte","lt","lte","exact"];
+    const filterTypeOptions = ["axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches","soma"];
+
     const atlasName = layerName.split("_mouselight")[0];
-    // Mouselight query section
+
+    // Make the overall div for this tool
+    this.element = document.createElement('div');
+    this.element.classList.add('neuroglancer-fetch-mouselight-tool');
+
     // Title
     this.fetchTitle = document.createElement('h3');
     this.fetchTitle.innerText = "Neuron fetch tool"
-    this.fetchTitle.align = "Center"
+    this.fetchTitle.classList.add('neuroglancer-mouselight-tool-title')
 
+
+    ///////// FILTER #1 /////////
+    // Make the div for this fitler (i.e. set of fields)
+    this.filterField = document.createElement('div');
+    // Filter name field
+    const filterTitle = document.createElement('p')
+    filterTitle.innerHTML = 'Filter 1'
+    filterTitle.classList.add('neuroglancer-mouselight-filter-title')
     // filter type -- e.g. "axonal end point" ,
     // "axonal branch point", "soma", etc..
     this.filterType = document.createElement('select');
@@ -52,9 +76,8 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     // Add listener to check if soma is selected. If so, hide the operator type and threshold
 
     this.filterType.addEventListener(
-      'change', () => this.mychangehandler(this.filterType));
+      'change', () => this.filterChangeHandler(this.filterType));
 
-    const filterTypeOptions = ["axon_endpoints","axon_branches","dendrite_endpoints","dendrite_branches","soma"];
     filterTypeOptions.forEach((option:string) => {
         const filter_option = document.createElement('option');
         filter_option.value = option;
@@ -77,8 +100,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     // Operator type -- is a dropdown of >, <, >=, <=, =, 
     this.operatorType = document.createElement('select');
     this.operatorType.classList.add('neuroglancer-fetch-mouselight-selection');
-    const operatorTypeOptions = [">",">=","<","<=","="];
-    const operatorTypeOptionValues = ["gt","gte","lt","lte","exact"];
+ 
     // eslint-disable-next-line no-var
     for(var i = 0; i < operatorTypeOptions.length; i++) {
         const filter_option = document.createElement('option');
@@ -91,6 +113,94 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     this.filterThreshold.type = 'text'
     this.filterThreshold.placeholder = 'Threshold (integer)'
     this.filterThreshold.classList.add('neuroglancer-fetch-mouselight-threshold');
+
+    // Second filter checkbox 
+    const secondFilterCheckboxElement = document.createElement('div');
+    secondFilterCheckboxElement.classList.add('neuroglancer-mouselight-newfilter-checkbox')
+    const secondFilterCheckbox = document.createElement('input');
+    secondFilterCheckbox.type = 'checkbox';
+    secondFilterCheckbox.addEventListener(
+      'change', () => this.checkboxHandler(secondFilterCheckbox));
+
+    const secondFilterCheckboxText = document.createElement('p');
+    secondFilterCheckboxText.innerHTML = 'Add another filter';
+    secondFilterCheckboxElement.appendChild(secondFilterCheckbox);
+    secondFilterCheckboxElement.appendChild(secondFilterCheckboxText);
+    // Add child elements to parent filter element
+    this.filterField.appendChild(this.fetchTitle);
+    this.filterField.appendChild(filterTitle);
+    this.filterField.appendChild(this.filterType);
+    this.filterField.appendChild(this.anatomicalSelection);
+    this.filterField.appendChild(this.operatorType);
+    this.filterField.appendChild(this.filterThreshold);
+    this.filterField.appendChild(secondFilterCheckboxElement);
+
+
+    ///////// FILTER #2, hidden by default /////////
+    this.filterFieldSecond = document.createElement('div');
+    this.filterFieldSecond.style.display = "none";
+
+    // Filter name field
+    const filterTitleSecond = document.createElement('p');
+    filterTitleSecond.innerHTML = 'Filter 2';
+    filterTitleSecond.classList.add('neuroglancer-mouselight-filter-title');
+    
+    // filter type -- e.g. "axonal end point" ,
+    // "axonal branch point", "soma", etc..
+    this.filterTypeSecond = document.createElement('select');
+    this.filterTypeSecond.classList.add('neuroglancer-fetch-mouselight-selection');
+    const defaultOptionFilterTypeSecond = document.createElement('option');
+    defaultOptionFilterTypeSecond.text = 'Select neuron part';
+    defaultOptionFilterTypeSecond.value = '';
+    defaultOptionFilterTypeSecond.disabled = true;
+    defaultOptionFilterTypeSecond.selected = true;
+    this.filterTypeSecond.add(defaultOptionFilterTypeSecond);
+
+    // Add listener to check if soma is selected. If so, hide the operator type and threshold
+
+    this.filterTypeSecond.addEventListener(
+      'change', () => this.filterChangeHandler(this.filterTypeSecond));
+
+    filterTypeOptions.forEach((option:string) => {
+        const filter_option = document.createElement('option');
+        filter_option.value = option;
+        filter_option.text = option;
+        this.filterTypeSecond.add(filter_option);
+      });
+
+    // Anatomical region
+    this.anatomicalSelectionDefaultSecond = document.createElement('select');
+    this.anatomicalSelectionDefaultSecond.classList.add('neuroglancer-fetch-mouselight-selection');
+    const defaultOptionSecond = document.createElement('option');
+    defaultOptionSecond.text = 'Loading anatomical regions';
+    defaultOptionSecond.value = '';
+    defaultOptionSecond.disabled = true;
+    defaultOptionSecond.selected = true;
+    this.anatomicalSelectionDefaultSecond.add(defaultOptionSecond);
+    this.anatomicalSelectionSecond = this.anatomicalSelectionDefaultSecond;
+    
+    // Operator type -- is a dropdown of >, <, >=, <=, =, 
+    this.operatorTypeSecond = document.createElement('select');
+    this.operatorTypeSecond.classList.add('neuroglancer-fetch-mouselight-selection');
+    // eslint-disable-next-line no-var
+    for(var i = 0; i < operatorTypeOptions.length; i++) {
+        const filter_option = document.createElement('option');
+        filter_option.text = operatorTypeOptions[i];
+        filter_option.value = operatorTypeOptionValues[i];
+        this.operatorTypeSecond.add(filter_option);
+    }
+    // Filter Threshold -- numeric input
+    this.filterThresholdSecond = document.createElement('input');
+    this.filterThresholdSecond.type = 'text'
+    this.filterThresholdSecond.placeholder = 'Threshold (integer)'
+    this.filterThresholdSecond.classList.add('neuroglancer-fetch-mouselight-threshold');
+    // 
+    this.filterFieldSecond.appendChild(filterTitleSecond);
+    this.filterFieldSecond.appendChild(this.filterTypeSecond);
+    this.filterFieldSecond.appendChild(this.anatomicalSelectionSecond);
+    this.filterFieldSecond.appendChild(this.operatorTypeSecond);
+    this.filterFieldSecond.appendChild(this.filterThresholdSecond);
+
     // SUBMIT QUERY BUTTON
     this.fetchButton = makeIcon({
       text: buttonText,
@@ -100,18 +210,14 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     
     this.fetchButton.classList.add('neuroglancer-fetch-mouselight-button');
 
-    this.element = document.createElement('div');
-    this.element.classList.add('neuroglancer-fetch-mouselight-tool');
-    this.element.appendChild(this.fetchTitle);
-    this.element.appendChild(this.filterType);
-    this.element.appendChild(this.anatomicalSelection);
-    this.element.appendChild(this.operatorType);
-    this.element.appendChild(this.filterThreshold);
+    // Now add all child elements to parent filter 
+    this.element.appendChild(this.filterField);
+    this.element.appendChild(this.filterFieldSecond);
     this.element.appendChild(this.fetchButton);
     this.registerDisposer(() => removeFromParent(this.element));
-
   }
-  private mychangehandler(elem: HTMLSelectElement) {
+
+  private filterChangeHandler(elem: HTMLSelectElement) {
     if (elem.value == 'soma') {
       this.operatorType.style.display = "none";
       this.filterThreshold.style.display = "none";
@@ -119,6 +225,15 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     else {
       this.operatorType.style.display = "block";
       this.filterThreshold.style.display = "block";
+    }
+  }
+
+  private checkboxHandler(elem: HTMLInputElement) {
+    if (elem.checked) {
+      this.filterFieldSecond.style.display = "block";
+    }
+    else {
+      this.filterFieldSecond.style.display = "none";
     }
   }
 
@@ -132,6 +247,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
           return response.json();
         });
 
+      // Make new select element and fill with anatomical regions we fetched from API
       const mouselightAnatomicalRegions = document.createElement('select');
       mouselightAnatomicalRegions.classList.add('neuroglancer-fetch-mouselight-selection');
       const defaultOption = document.createElement('option');
@@ -150,16 +266,25 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
         mouselightAnatomicalRegions.add(option);
       });
 
-      const mouselightElementFetched = document.createElement('div');
-      mouselightElementFetched.classList.add('neuroglancer-fetch-mouselight-tool');
-      mouselightElementFetched.appendChild(this.fetchTitle);
-      mouselightElementFetched.appendChild(this.filterType);
-      mouselightElementFetched.appendChild(mouselightAnatomicalRegions);
-      mouselightElementFetched.appendChild(this.operatorType);
-      mouselightElementFetched.appendChild(this.filterThreshold);
-      mouselightElementFetched.appendChild(this.fetchButton);
-      this.element.parentNode?.replaceChild(mouselightElementFetched, this.element);
-      this.anatomicalSelection = mouselightAnatomicalRegions;
+      
+      const mouselightAnatomicalRegionsSecond = <HTMLSelectElement>mouselightAnatomicalRegions.cloneNode(true);
+      mouselightAnatomicalRegionsSecond.value = '';
+      // Filter #2, replace the anatomical regions select element with this new element
+      this.anatomicalSelectionDefault.parentNode?.replaceChild(
+        mouselightAnatomicalRegions, this.anatomicalSelectionDefault);
+
+      // Filter #2, make new div and replace the anatomical regions select with this new element
+      this.anatomicalSelectionDefaultSecond.parentNode?.replaceChild(
+        mouselightAnatomicalRegionsSecond, this.anatomicalSelectionDefaultSecond);
+      // const mouselightElementFetchedSecond = document.createElement('div');
+      // mouselightElementFetchedSecond.classList.add('neuroglancer-fetch-mouselight-tool');
+      // mouselightElementFetchedSecond.appendChild(this.fetchTitleSecond);
+      // mouselightElementFetchedSecond.appendChild(this.filterTypeSecond);
+      // mouselightElementFetchedSecond.appendChild(mouselightAnatomicalRegionsSecond);
+      // mouselightElementFetchedSecond.appendChild(this.operatorTypeSecond);
+      // mouselightElementFetchedSecond.appendChild(this.filterThresholdSecond);
+      // this.element.parentNode?.replaceChild(mouselightElementFetchedSecond, this.elementSecond);
+      // this.anatomicalSelectionSecond = mouselightAnatomicalRegions;
 
         
       } catch (e) {
