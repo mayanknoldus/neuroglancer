@@ -783,8 +783,13 @@ export class SegmentDisplayTab extends Tab {
     const {element} = this;
     element.classList.add('neuroglancer-segment-display-tab');
     const layerName = layer.managedLayer.name;
-    const fetchMouselightNeuronsWidget = this.registerDisposer(new FetchMouselightNeuronsWidget(this.layer,layerName));
-    this.element.appendChild(fetchMouselightNeuronsWidget.element);
+    if (layerName.includes('mouselight')) {
+      
+      const fetchMouselightNeuronsWidget = this.registerDisposer(
+        new FetchMouselightNeuronsWidget(this.layer,layerName));
+      
+      this.element.appendChild(fetchMouselightNeuronsWidget.element);
+    }
     //   const newElement = document.createElement('div');
     //   newElement.classList.add('neuroglancer-fetch-annotation-tool');
     //   newElement.appendChild(annotationSelectionFetched);
