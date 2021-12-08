@@ -65,6 +65,7 @@ const NOT_SELECTED_ALPHA_JSON_KEY = 'notSelectedAlpha';
 const OBJECT_ALPHA_JSON_KEY = 'objectAlpha';
 const SATURATION_JSON_KEY = 'saturation';
 const HIDE_SEGMENT_ZERO_JSON_KEY = 'hideSegmentZero';
+const SET_SEGMENTS_GRAYSCALE_JSON_KEY = 'setSegmentsGrayScale';
 const BASE_SEGMENT_COLORING_JSON_KEY = 'baseSegmentColoring';
 const IGNORE_NULL_VISIBLE_SET_JSON_KEY = 'ignoreNullVisibleSet';
 const MESH_JSON_KEY = 'mesh';
@@ -288,6 +289,7 @@ class SegmentationUserLayerDisplayState implements SegmentationDisplayState {
   selectSegment = this.layer.selectSegment;
   transparentPickEnabled = this.layer.pick;
   baseSegmentColoring = new TrackableBoolean(false, false);
+  setSegmentsGrayScale = new TrackableBoolean(true, false);
 
   filterBySegmentLabel = this.layer.filterBySegmentLabel;
 
@@ -388,6 +390,7 @@ export class SegmentationUserLayer extends Base {
     this.displayState.skeletonRenderingOptions.changed.add(this.specificationChanged.dispatch);
     this.displayState.renderScaleTarget.changed.add(this.specificationChanged.dispatch);
     this.displayState.silhouetteRendering.changed.add(this.specificationChanged.dispatch);
+    this.displayState.setSegmentsGrayScale.changed.add(this.specificationChanged.dispatch);
     this.anchorSegment.changed.add(this.specificationChanged.dispatch);
     this.sliceViewRenderScaleTarget.changed.add(this.specificationChanged.dispatch);
     this.displayState.originalSegmentationGroupState.localGraph.changed.add(
@@ -569,6 +572,7 @@ export class SegmentationUserLayer extends Base {
         specification[MESH_SILHOUETTE_RENDERING_JSON_KEY]);
     this.displayState.ignoreNullVisibleSet.restoreState(
         specification[IGNORE_NULL_VISIBLE_SET_JSON_KEY]);
+    this.displayState.setSegmentsGrayScale.restoreState(specification[SET_SEGMENTS_GRAYSCALE_JSON_KEY]);
 
     const {skeletonRenderingOptions} = this.displayState;
     skeletonRenderingOptions.restoreState(specification[SKELETON_RENDERING_JSON_KEY]);

@@ -24,6 +24,8 @@ import {makeMaximizeButton} from 'neuroglancer/widget/maximize_button';
 import {ShaderCodeWidget} from 'neuroglancer/widget/shader_code_widget';
 import {ShaderControls} from 'neuroglancer/widget/shader_controls';
 import {Tab} from 'neuroglancer/widget/tab_view';
+import {TrackableBooleanCheckbox} from 'neuroglancer/trackable_boolean';
+
 
 function makeSkeletonShaderCodeWidget(layer: SegmentationUserLayer) {
   return new ShaderCodeWidget({
@@ -57,6 +59,20 @@ export class DisplayOptionsTab extends Tab {
 
     for (const control of LAYER_CONTROLS) {
       element.appendChild(addLayerControlToOptionsTab(this, layer, this.visibility, control));
+    }
+
+    // set segments grayscale
+    {
+      const checkbox =
+          this.registerDisposer(new TrackableBooleanCheckbox(layer.displayState.setSegmentsGrayScale));
+      checkbox.element.className =
+          'neuroglancer-segmentation-dropdown-set-segments-grayscale neuroglancer-noselect';
+      const label = document.createElement('label');
+      label.className =
+          'neuroglancer-segmentation-dropdown-set-segments-grayscale neuroglancer-noselect';
+      label.appendChild(document.createTextNode('Use grayscale color scheme'));
+      label.appendChild(checkbox.element);
+      element.appendChild(label);
     }
 
     const skeletonControls = this.registerDisposer(new DependentViewWidget(

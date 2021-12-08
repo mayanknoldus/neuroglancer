@@ -51,6 +51,7 @@ export interface SliceViewSegmentationDisplayState extends SegmentationDisplaySt
   notSelectedAlpha: WatchableValueInterface<number>;
   hideSegmentZero: WatchableValueInterface<boolean>;
   ignoreNullVisibleSet: WatchableValueInterface<boolean>;
+  setSegmentsGrayScale: WatchableValueInterface<boolean>;
 }
 
 interface ShaderParameters {
@@ -59,6 +60,7 @@ interface ShaderParameters {
   hasSegmentStatedColors: boolean;
   hideSegmentZero: boolean;
   hasSegmentDefaultColor: boolean;
+  setSegmentsGrayScale: boolean;
 }
 
 export class SegmentationRenderLayer extends SliceViewVolumeRenderLayer<ShaderParameters> {
@@ -97,6 +99,7 @@ export class SegmentationRenderLayer extends SliceViewVolumeRenderLayer<ShaderPa
                 x => x !== undefined, [displayState.segmentDefaultColor])),
             hideSegmentZero: displayState.hideSegmentZero,
             baseSegmentColoring: displayState.baseSegmentColoring,
+            setSegmentsGrayScale: displayState.setSegmentsGrayScale,
           })),
       transform: displayState.transform,
       renderScaleHistogram: displayState.renderScaleHistogram,
@@ -210,9 +213,18 @@ uint64_t getMappedObjectId(uint64_t value) {
     builder.addFragmentCode(getMappedIdColor);
 
     fragmentMain += `
-  vec3 rgb = getMappedIdColor(valueForColor);
-  emit(vec4(mix(vec3(1.0,1.0,1.0), rgb, saturation), alpha));
+  vec3 rgb = getMappedIdColor(valueForColor);`
+    if (parameters.setSegmentsGrayScale) {
+      fragmentMain += `
+      float grayval = (rgb[0]+rgb[1]+rgb[2])/3.0;
+    emit(vec4(mix(vec3(0.0,0.0,0.0), vec3(grayval,grayval,grayval), saturation), alpha));
 `;
+    }
+    else {
+      fragmentMain += `
+        emit(vec4(mix(vec3(1.0,1.0,1.0), rgb, saturation), alpha));
+`;
+    }
     builder.setFragmentMain(fragmentMain);
   }
 
