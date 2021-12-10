@@ -115,7 +115,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     this.filterThreshold.placeholder = 'Threshold (integer)'
     this.filterThreshold.classList.add('neuroglancer-fetch-mouselight-threshold');
 
-    // Second filter checkbox 
+    // Second filter  box 
     const secondFilterCheckboxElement = document.createElement('div');
     secondFilterCheckboxElement.classList.add('neuroglancer-mouselight-newfilter-checkbox')
     this.secondFilterCheckbox = document.createElement('input');
@@ -205,6 +205,9 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     this.filterFieldSecond.appendChild(this.anatomicalSelectionSecond);
     this.filterFieldSecond.appendChild(this.operatorTypeSecond);
     this.filterFieldSecond.appendChild(this.filterThresholdSecond);
+
+    // What part of neuron to fetch - three checkboxes centered
+
 
     // SUBMIT QUERY BUTTON
     this.fetchButton = makeIcon({
@@ -376,6 +379,9 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
         // let counter = 0;
         const n_neurons_fetched = neuronJSON.segmentId.length/3;
         this.numberNeuronsShownField.innerHTML = `Number of neurons in last fetch:  ${n_neurons_fetched}`;
+        if (n_neurons_fetched == 0) {
+          this.numberNeuronsShownField.style.color = 'red';
+        }
         neuronJSON.segmentId.forEach((segid:number) => {
           const id = new Uint64(segid);
 
