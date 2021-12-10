@@ -33,6 +33,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
   private filterThresholdSecond: HTMLInputElement;
 
   private fetchButton: HTMLElement;
+  private numberNeuronsShownField: HTMLElement
 
   constructor(public layer: SegmentationUserLayer, public layerName: string) {
     super();
@@ -214,10 +215,16 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
     
     this.fetchButton.classList.add('neuroglancer-fetch-mouselight-button');
 
+    // Text area showing how many neurons are shown
+    this.numberNeuronsShownField = document.createElement('p');
+    this.numberNeuronsShownField.innerHTML = '';
+    this.numberNeuronsShownField.classList.add('neuroglancer-mouselight-filter-title');
+
     // Now add all child elements to parent filter 
     this.element.appendChild(filterField);
     this.element.appendChild(this.filterFieldSecond);
     this.element.appendChild(this.fetchButton);
+    this.element.appendChild(this.numberNeuronsShownField);
     this.registerDisposer(() => removeFromParent(this.element));
   }
 
@@ -368,6 +375,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
         const group = this.layer.displayState.segmentationGroupState.value;
         // let counter = 0;
         const n_neurons_fetched = neuronJSON.segmentId.length/3;
+        this.numberNeuronsShownField.innerHTML = `Number of neurons in last fetch:  ${n_neurons_fetched}`;
         neuronJSON.segmentId.forEach((segid:number) => {
           const id = new Uint64(segid);
 
@@ -377,7 +385,7 @@ export class FetchMouselightNeuronsWidget extends RefCounted{
           // option.text = `${prep_id}/${layer}/${input_type}`;
           // annotationSelectionFetched.add(option);
         });
-        StatusMessage.showTemporaryMessage(`Successfully fetched ${n_neurons_fetched}  mouselight neurons`,3000);
+        StatusMessage.showTemporaryMessage(`Successfully fetched ${n_neurons_fetched}  mouselight neurons`);
         
         } catch (e) {
           StatusMessage.showTemporaryMessage('Unable to fetch the mouselight neurons');
