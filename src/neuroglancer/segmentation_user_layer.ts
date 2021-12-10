@@ -572,7 +572,8 @@ export class SegmentationUserLayer extends Base {
         specification[MESH_SILHOUETTE_RENDERING_JSON_KEY]);
     this.displayState.ignoreNullVisibleSet.restoreState(
         specification[IGNORE_NULL_VISIBLE_SET_JSON_KEY]);
-    this.displayState.setSegmentsGrayScale.restoreState(specification[SET_SEGMENTS_GRAYSCALE_JSON_KEY]);
+    this.displayState.setSegmentsGrayScale.restoreState(
+      specification[SET_SEGMENTS_GRAYSCALE_JSON_KEY]);
 
     const {skeletonRenderingOptions} = this.displayState;
     skeletonRenderingOptions.restoreState(specification[SKELETON_RENDERING_JSON_KEY]);
@@ -608,6 +609,7 @@ export class SegmentationUserLayer extends Base {
     x[BASE_SEGMENT_COLORING_JSON_KEY] = this.displayState.baseSegmentColoring.toJSON();
     x[IGNORE_NULL_VISIBLE_SET_JSON_KEY] = this.displayState.ignoreNullVisibleSet.toJSON();
     x[MESH_SILHOUETTE_RENDERING_JSON_KEY] = this.displayState.silhouetteRendering.toJSON();
+    x[SET_SEGMENTS_GRAYSCALE_JSON_KEY] = this.displayState.setSegmentsGrayScale.toJSON();
     x[ANCHOR_SEGMENT_JSON_KEY] = this.anchorSegment.toJSON();
     x[SKELETON_RENDERING_JSON_KEY] = this.displayState.skeletonRenderingOptions.toJSON();
     x[MESH_RENDER_SCALE_JSON_KEY] = this.displayState.renderScaleTarget.toJSON();
