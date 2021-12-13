@@ -1,12 +1,12 @@
 import './fetch_annotation.css';
-import {AnnotationSource, restoreAnnotation} from 'neuroglancer/annotation/index';
-import {StatusMessage} from 'neuroglancer/status';
-import {AnnotationLayerView} from 'neuroglancer/ui/annotations';
-import {RefCounted} from 'neuroglancer/util/disposable';
-import {removeFromParent} from 'neuroglancer/util/dom';
-import {fetchOk} from 'neuroglancer/util/http_request';
-import {makeIcon} from 'neuroglancer/widget/icon';
-import {AppSettings} from 'neuroglancer/services/service';
+import { AnnotationSource, restoreAnnotation } from 'neuroglancer/annotation/index';
+import { StatusMessage } from 'neuroglancer/status';
+import { AnnotationLayerView } from 'neuroglancer/ui/annotations';
+import { RefCounted } from 'neuroglancer/util/disposable';
+import { removeFromParent } from 'neuroglancer/util/dom';
+import { fetchOk } from 'neuroglancer/util/http_request';
+import { makeIcon } from 'neuroglancer/widget/icon';
+import { AppSettings } from 'neuroglancer/services/service';
 
 const buttonText = 'Import';
 const buttonTitle = 'Import annotation';
@@ -24,7 +24,7 @@ interface AnnotationLayerInfo {
   input_type_id: number
 }
 
-export class FetchAnnotationWidget extends RefCounted{
+export class FetchAnnotationWidget extends RefCounted {
   element: HTMLElement;
   public annotationSelection: HTMLSelectElement;
   private annotationSelectionDefault: HTMLSelectElement;
@@ -50,7 +50,7 @@ export class FetchAnnotationWidget extends RefCounted{
     this.fetchButton = makeIcon({
       text: buttonText,
       title: buttonTitle,
-      onClick: () => {this.fetchAnnotation()},
+      onClick: () => { this.fetchAnnotation() },
     });
     this.fetchButton.classList.add('neuroglancer-fetch-annotation-button');
 
@@ -65,7 +65,7 @@ export class FetchAnnotationWidget extends RefCounted{
   async setUpAnnotationList() {
     const url = `${AppSettings.API_ENDPOINT}/annotations`;
     try {
-      const response:Array<AnnotationLayerInfo> = await fetchOk(url, {
+      const response: Array<AnnotationLayerInfo> = await fetchOk(url, {
         method: 'GET',
       }).then(response => {
         return response.json();
@@ -80,7 +80,7 @@ export class FetchAnnotationWidget extends RefCounted{
       annotationSelectionFetched.add(defaultOption);
 
       response.forEach(AnnotationLayerInfo => {
-        const {prep_id, layer, input_type, input_type_id} = AnnotationLayerInfo;
+        const { prep_id, layer, input_type, input_type_id } = AnnotationLayerInfo;
         const option = document.createElement('option');
         option.value = `${prep_id}/${encodeURIComponent(layer)}/${input_type_id}`;
         option.text = `${prep_id}/${layer}/${input_type}`;
@@ -109,16 +109,16 @@ export class FetchAnnotationWidget extends RefCounted{
     const annotationURL = `${AppSettings.API_ENDPOINT}/annotation/${annotation}`;
 
     try {
-      const annotationJSON:Array<AnnotationJSON> = await fetchOk(annotationURL, {
+      const annotationJSON: Array<AnnotationJSON> = await fetchOk(annotationURL, {
         method: 'GET',
       }).then(response => {
         return response.json();
       });
 
       const state = this.layerView.annotationStates.states[0].source as AnnotationSource;
-      let addedCount:number = 0;
-      let duplicateCount:number = 0;
-      annotationJSON.forEach((anno) =>{
+      let addedCount: number = 0;
+      let duplicateCount: number = 0;
+      annotationJSON.forEach((anno) => {
         const annotation = restoreAnnotation(anno, state);
         try {
           state.add(annotation);
@@ -133,7 +133,7 @@ export class FetchAnnotationWidget extends RefCounted{
         StatusMessage.showTemporaryMessage(`${addedCount} annotations added.`);
       }
     } catch (e) {
-      StatusMessage.showTemporaryMessage('Unable to get the annotation.');
+      StatusMessage.showTemporaryMessage('Unable to get the annotation. Make sure the annotation layer is not the first layer.');
       throw e;
     }
   }
